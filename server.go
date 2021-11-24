@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"encoding/json"
+	"sync"
 )
 
 type Coaster struct {
@@ -14,25 +15,39 @@ type Coaster struct {
 }
 
 type coasterHandlers struct {
+	sync.Mutex
 	store map[string]Coaster
 }
 
 func main() {
 	h := NewCoasterHandlers()
-	http.HandleFunc("/coasters", h.coastersHandler)
+	http.HandleFunc("/coasters", h.coasters)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (h *coasterHandlers) coastersHandler(w http.ResponseWriter, r *http.Request) {
+func (h *coasterHandlers) coasters(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		h.get(w, r)
+		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (h *coasterHandlers) get(w http.ResponseWriter, r *http.Request) {
 	coasters := make([]Coaster, len(h.store))
+	h.Lock()
 	i := 0
 	for _, coaster := range h.store {
 		coasters[i] = coaster
 		i++
 	}
+	h.Unlock()
 	jsonBytes, err := json.Marshal(coasters)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
