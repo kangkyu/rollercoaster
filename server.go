@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"sync"
 	"io"
+	"time"
+	"fmt"
 )
 
 type Coaster struct {
@@ -76,6 +78,8 @@ func (h *coasterHandlers) post(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 	}
+
+	coaster.ID = fmt.Sprintf("id%d", time.Now().UnixNano())
 	h.Lock()
 	defer h.Unlock()
 	h.store[coaster.ID] = coaster
