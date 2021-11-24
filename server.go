@@ -35,8 +35,11 @@ func (h *coasterHandlers) coastersHandler(w http.ResponseWriter, r *http.Request
 	}
 	jsonBytes, err := json.Marshal(coasters)
 	if err != nil {
-		// TODO
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 	}
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
 
