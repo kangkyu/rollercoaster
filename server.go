@@ -73,6 +73,14 @@ func (h *coasterHandlers) post(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+
+	ct := r.Header.Get("content-type")
+	if ct != "application/json" {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		w.Write([]byte(fmt.Sprintf("need content-type 'application/json' but got '%s'", ct)))
+		return
+	}
+
 	var coaster Coaster
 	err = json.Unmarshal(bodyBytes, &coaster)
 	if err != nil {
