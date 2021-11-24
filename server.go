@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"sync"
+	"io"
 )
 
 type Coaster struct {
@@ -33,6 +34,9 @@ func (h *coasterHandlers) coasters(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		h.get(w, r)
 		return
+	case "POST":
+		h.post(w, r)
+		return
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -56,6 +60,25 @@ func (h *coasterHandlers) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
+}
+
+func (h *coasterHandlers) post(w http.ResponseWriter, r *http.Request) {
+	bodyBytes, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	var coaster Coaster
+	err = json.Unmarshal(bodyBytes, &coaster)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+	}
+	h.Lock()
+	defer h.Unlock()
+	h.store[coaster.ID] = coaster
 }
 
 func NewCoasterHandlers() *coasterHandlers {
